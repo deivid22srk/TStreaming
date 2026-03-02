@@ -15,25 +15,71 @@ import com.rk.terminal.ui.screens.terminal.changeSession
 import com.rk.terminal.ui.screens.terminal.terminalView
 import com.rk.settings.Settings
 import com.termux.view.TerminalView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun BotScreen(
     mainActivity: MainActivity,
     navController: NavHostController
 ) {
-    val context = mainActivity
+    var statusText by remember { mutableStateOf("Servidor desligado") }
+    var isStarting by remember { mutableStateOf(false) }
+    var isRunning by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("FileStreamBot Control", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = {
-                startBot(mainActivity)
-                navController.navigate(MainActivityRoutes.MainScreen.route)
-            }) {
-                Text("Iniciar servidor")
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("File Streaming Bot", style = MaterialTheme.typography.headlineLarge)
+
+            Card(
+                modifier = Modifier.fillMaxWidth(0.8f),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Status", style = MaterialTheme.typography.labelLarge)
+                    Text(statusText, style = MaterialTheme.typography.bodyLarge, color = if (isRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                    if (isStarting) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedButton(onClick = {
+
+            Button(
+                onClick = {
+                    if (!isStarting && !isRunning) {
+                        isStarting = true
+                        statusText = "O servidor está sendo iniciado..."
+                        scope.launch {
+                            startBot(mainActivity)
+                            delay(2000) // Simulação de tempo de boot
+                            isStarting = false
+                            isRunning = true
+                            statusText = "O servidor foi iniciado"
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(0.6f),
+                enabled = !isStarting && !isRunning
+            ) {
+                Text(if (isRunning) "Servidor Ativo" else "Iniciar servidor")
+            }
+
+            OutlinedButton(
+                onClick = {
+                    navController.navigate(MainActivityRoutes.MainScreen.route)
+                },
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text("Abrir Terminal")
+            }
+
+            TextButton(onClick = {
                 navController.navigate(MainActivityRoutes.BotSettings.route)
             }) {
                 Text("Configurações")
