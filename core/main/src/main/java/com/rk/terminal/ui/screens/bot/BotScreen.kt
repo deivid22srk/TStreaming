@@ -14,6 +14,7 @@ import com.rk.terminal.ui.screens.terminal.TerminalBackEnd
 import com.rk.terminal.ui.screens.terminal.changeSession
 import com.rk.terminal.ui.screens.terminal.terminalView
 import com.rk.settings.Settings
+import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -27,6 +28,26 @@ fun BotScreen(
     var isStarting by remember { mutableStateOf(false) }
     var isRunning by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        while(true) {
+            val session = mainActivity.sessionBinder?.getSession("FileStreamBot")
+            if (session != null) {
+                val transcript = session.emulator.screen.getSelectedText(0, 0, session.emulator.mColumns, session.emulator.mRows)
+                if (transcript.contains("Session started")) {
+                    isRunning = true
+                    statusText = "O servidor foi iniciado"
+                } else if (transcript.contains("Error") || transcript.contains("Exception") || transcript.contains("Traceback")) {
+                    isRunning = true // It "ran" but failed
+                    statusText = "O servidor iniciou com erros"
+                }
+            } else {
+                isRunning = false
+                if (!isStarting) statusText = "Servidor desligado"
+            }
+            delay(2000)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
