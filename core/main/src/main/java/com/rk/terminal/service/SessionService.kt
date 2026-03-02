@@ -23,7 +23,6 @@ class SessionService : Service() {
     private val sessions = hashMapOf<String, TerminalSession>()
     val sessionList = mutableStateMapOf<String,Int>()
     var currentSession = mutableStateOf(Pair("main",com.rk.settings.Settings.working_Mode))
-    var isBotRunning = mutableStateOf(false)
 
     inner class SessionBinder : Binder() {
         fun getService():SessionService{
@@ -49,10 +48,6 @@ class SessionService : Service() {
         }
         fun terminateSession(id: String) {
             runCatching {
-                if (id == "FileStreamBot") {
-                    isBotRunning.value = false
-                    com.rk.settings.Settings.bot_last_state = false
-                }
                 //crash is here
                 sessions[id]?.apply {
                     if (emulator != null){

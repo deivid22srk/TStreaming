@@ -33,28 +33,24 @@ fun BotScreen(
     LaunchedEffect(Unit) {
         while(true) {
             val binder = mainActivity.sessionBinder
-            val session = binder?.getSession("FileStreamBot")
-            if (session != null && session.emulator != null) {
-                val transcript = session.emulator.screen.transcriptText
-                if (transcript.contains("Session started")) {
-                    isStarting = false
-                    isRunning = true
-                    binder.getService().isBotRunning.value = true
-                    Settings.bot_last_state = true
-                    statusText = "O servidor foi iniciado"
-                } else if (transcript.contains("Error") || transcript.contains("Exception") || transcript.contains("Traceback")) {
-                    isStarting = false
-                    isRunning = true
-                    binder.getService().isBotRunning.value = true
-                    Settings.bot_last_state = true
-                    statusText = "O servidor iniciou (verifique os logs)"
-                }
-            } else {
-                isRunning = (binder?.getService()?.isBotRunning?.value ?: false) || Settings.bot_last_state
-                if (!isRunning && !isStarting) {
-                    statusText = "Servidor desligado"
-                } else if (isRunning) {
-                    statusText = "O servidor foi iniciado"
+            if (binder != null) {
+                val session = binder.getSession("FileStreamBot")
+                if (session != null && session.emulator != null) {
+                    val transcript = session.emulator.screen.transcriptText
+                    if (transcript.contains("Session started")) {
+                        isStarting = false
+                        isRunning = true
+                        statusText = "O servidor foi iniciado"
+                    } else if (transcript.contains("Error") || transcript.contains("Exception") || transcript.contains("Traceback")) {
+                        isStarting = false
+                        isRunning = true
+                        statusText = "O servidor iniciou (verifique os logs)"
+                    }
+                } else {
+                    isRunning = false
+                    if (!isStarting) {
+                        statusText = "Servidor desligado"
+                    }
                 }
             }
             delay(1000)

@@ -128,9 +128,6 @@ object Settings {
         get() = Preference.getString(key = "bot_port", default = "5000")
         set(value) = Preference.setString(key = "bot_port", value)
 
-    var bot_last_state
-        get() = Preference.getBoolean(key = "bot_last_state", default = false)
-        set(value) = Preference.setBoolean(key = "bot_last_state", value)
 
 
     fun getShortcutBinding(action: com.rk.terminal.ui.screens.terminal.ShortcutAction): com.rk.terminal.ui.screens.terminal.ShortcutBinding {
