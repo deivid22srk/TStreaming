@@ -1,12 +1,21 @@
 package com.rk.terminal.ui.screens.bot
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.rk.libcommons.*
 import com.rk.terminal.ui.activities.terminal.MainActivity
@@ -27,6 +36,14 @@ fun SetupScreen(
 ) {
     var progress by remember { mutableFloatStateOf(0f) }
     var progressText by remember { mutableStateOf("Iniciando...") }
+    val logs = remember { mutableStateListOf<String>() }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(logs.size) {
+        if (logs.isNotEmpty()) {
+            listState.animateScrollToItem(logs.size - 1)
+        }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -35,29 +52,46 @@ fun SetupScreen(
 
             val steps = listOf<Pair<String, suspend () -> Unit>>(
                 "Baixando componentes básicos" to {
+                    logs.add("Baixando talloc...")
                     downloadFile(urls.talloc, Rootfs.reTerminal.child("libtalloc.so.2"))
+                    logs.add("Baixando proot...")
                     downloadFile(urls.proot, Rootfs.reTerminal.child("proot"))
                 },
                 "Baixando Alpine Linux" to {
+                    logs.add("Baixando alpine rootfs...")
                     downloadFile(urls.alpine, Rootfs.reTerminal.child("alpine.tar.gz"))
                 },
                 "Extraindo sistema" to {
-                    extractAlpine()
+                    logs.add("Extraindo alpine.tar.gz (isso pode demorar)...")
+                    extractAlpine { logs.add(it) }
                 },
                 "Configurando ambiente" to {
+                    logs.add("Configurando binários e scripts de inicialização...")
                     setupBasicEnv(mainActivity)
                 },
                 "Atualizando repositórios" to {
-                    runInAlpine(mainActivity, "apk update") { line -> progressText = "apk: $line" }
+                    runInAlpine(mainActivity, "apk update") { line ->
+                        progressText = "apk: $line"
+                        logs.add(line)
+                    }
                 },
                 "Instalando dependências do sistema" to {
-                    runInAlpine(mainActivity, "apk add bash gcompat glib nano python3 py3-pip git build-base python3-dev libffi-dev openssl-dev") { line -> progressText = "apk: $line" }
+                    runInAlpine(mainActivity, "apk add bash gcompat glib nano python3 py3-pip git build-base python3-dev libffi-dev openssl-dev") { line ->
+                        progressText = "apk: $line"
+                        logs.add(line)
+                    }
                 },
                 "Clonando FileStreamBot" to {
-                    runInAlpine(mainActivity, "git clone https://github.com/TheCaduceus/FileStreamBot.git /root/FileStreamBot") { line -> progressText = "git: $line" }
+                    runInAlpine(mainActivity, "git clone https://github.com/TheCaduceus/FileStreamBot.git /root/FileStreamBot") { line ->
+                        progressText = "git: $line"
+                        logs.add(line)
+                    }
                 },
                 "Instalando dependências do Bot" to {
-                    runInAlpine(mainActivity, "cd /root/FileStreamBot && export PIP_BREAK_SYSTEM_PACKAGES=1 && pip3 install -r requirements.txt") { line -> progressText = "pip: $line" }
+                    runInAlpine(mainActivity, "cd /root/FileStreamBot && export PIP_BREAK_SYSTEM_PACKAGES=1 && pip3 install -r requirements.txt") { line ->
+                        progressText = "pip: $line"
+                        logs.add(line)
+                    }
                 }
             )
 
@@ -81,21 +115,44 @@ fun SetupScreen(
             }
 
         } catch (e: Exception) {
-            progressText = "Erro: ${e.message}"
+            val errorMsg = "Erro: ${e.message}"
+            progressText = errorMsg
+            logs.add(errorMsg)
             e.printStackTrace()
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Configuração do Sistema", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(progressText, style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth(0.8f)
-            )
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Configuração do Sistema", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(progressText, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+        Spacer(modifier = Modifier.height(16.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth(0.8f)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Surface(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            color = Color.Black,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            SelectionContainer {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                    state = listState
+                ) {
+                    items(logs) { log ->
+                        Text(
+                            text = log,
+                            color = Color.Green,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -114,19 +171,29 @@ private suspend fun downloadFile(url: String, outputFile: File) {
     outputFile.setExecutable(true, false)
 }
 
-private fun extractAlpine() {
+private suspend fun extractAlpine(onLine: (String) -> Unit) {
     val alpineTar = Rootfs.reTerminal.child("alpine.tar.gz")
     val destDir = alpineDir()
     destDir.mkdirs()
 
-    val process = ProcessBuilder("tar", "-xf", alpineTar.absolutePath, "-C", destDir.absolutePath)
+    val process = ProcessBuilder("tar", "-vxf", alpineTar.absolutePath, "-C", destDir.absolutePath)
         .redirectErrorStream(true)
         .start()
 
+    withContext(Dispatchers.IO) {
+        process.inputStream.bufferedReader().use { reader ->
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                withContext(Dispatchers.Main) {
+                    onLine(line!!)
+                }
+            }
+        }
+    }
+
     val exitCode = process.waitFor()
     if (exitCode != 0) {
-        val error = process.inputStream.bufferedReader().readText()
-        throw Exception("Falha na extração: $error")
+        throw Exception("Falha na extração: código $exitCode")
     }
 }
 
