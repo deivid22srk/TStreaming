@@ -1,12 +1,12 @@
 package com.rk.terminal.ui.screens.bot
 
-import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -69,15 +69,6 @@ fun SetupScreen(
                 "Configurando ambiente" to {
                     logs.add("Configurando binários e scripts de inicialização...")
                     setupBasicEnv(mainActivity)
-                    // DNS FIX
-                    try {
-                        val etcDir = alpineDir().child("etc")
-                        etcDir.mkdirs()
-                        etcDir.child("resolv.conf").writeText("nameserver 8.8.8.8\nnameserver 1.1.1.1\n")
-                        logs.add("DNS configurado.")
-                    } catch (e: Exception) {
-                        logs.add("Erro ao configurar DNS: ${e.message}")
-                    }
                 },
                 "Atualizando repositórios" to {
                     runInAlpine(mainActivity, "apk update") { line ->
@@ -156,7 +147,7 @@ fun SetupScreen(
                 Row(modifier = Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = {
                         val text = logs.joinToString("\n")
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                         val clip = android.content.ClipData.newPlainText("Logs", text)
                         clipboard.setPrimaryClip(clip)
                     }) {
@@ -256,34 +247,20 @@ private fun setupBasicEnv(activity: MainActivity) {
 private suspend fun runInAlpine(activity: MainActivity, command: String, onLine: (String) -> Unit) {
     val binDir = localBinDir()
     val libDir = localLibDir()
-    val linker = if (File("/system/bin/linker64").exists()) "/system/bin/linker64" else "/system/bin/linker"
     val prefix = activity.filesDir.parentFile!!.path
 
     val prootCmd = mutableListOf(
-        linker,
-        binDir.child("proot").absolutePath,
-        "--kill-on-exit",
-        "-r", alpineDir().absolutePath,
-        "-b", "/dev",
-        "-b", "/proc",
-        "-b", "/sys",
-        "-b", "/sdcard",
-        "-b", "/system",
-        "-b", "/vendor",
-        "-b", "/data",
-        "-b", prefix,
-        "-0",
-        "--link2symlink",
-        "--sysvipc",
-        "-L",
-        "-w", "/root",
-        "/bin/sh", "-c", "export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin && $command"
+        "/system/bin/sh",
+        binDir.child("init-host").absolutePath,
+        "sh", "-c", command
     )
 
     val pb = ProcessBuilder(prootCmd)
     val env = pb.environment()
     env["LD_LIBRARY_PATH"] = libDir.absolutePath
     env["PREFIX"] = prefix
+    env["BIN"] = binDir.absolutePath
+    env["LINKER"] = if (File("/system/bin/linker64").exists()) "/system/bin/linker64" else "/system/bin/linker"
     env["PROOT_TMP_DIR"] = activity.cacheDir.child("proot_tmp").also { it.mkdirs() }.absolutePath
 
     val process = pb.redirectErrorStream(true).start()

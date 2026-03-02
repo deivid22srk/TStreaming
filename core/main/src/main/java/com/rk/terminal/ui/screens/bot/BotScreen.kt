@@ -16,6 +16,7 @@ import com.rk.terminal.ui.screens.terminal.terminalView
 import com.rk.settings.Settings
 import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -39,8 +40,6 @@ fun BotScreen(
                     isRunning = true
                     statusText = "O servidor foi iniciado"
                 } else if (transcript.contains("Error") || transcript.contains("Exception") || transcript.contains("Traceback")) {
-                    // Specific requirement: "se teve algum erro... e pq funcionou"
-                    // We'll mark it as started but notify about the potential issues
                     isStarting = false
                     isRunning = true
                     statusText = "O servidor iniciou (verifique os logs)"
@@ -114,14 +113,13 @@ fun BotScreen(
 fun startBot(mainActivity: MainActivity) {
     val sessionId = "FileStreamBot"
 
-    val localDir = File(mainActivity.filesDir.parentFile, "local")
-    val botDir = File(localDir, "alpine/root/FileStreamBot")
+    val localDir = java.io.File(mainActivity.filesDir.parentFile, "local")
+    val botDir = java.io.File(localDir, "alpine/root/FileStreamBot")
     if (!botDir.exists()) {
         toast("Erro: Diretório do Bot não encontrado. Reinstale o sistema.")
         return
     }
 
-    // Clear existing session if it failed to start properly
     mainActivity.sessionBinder?.terminateSession(sessionId)
 
     val env = mutableMapOf<String, String>()
@@ -147,7 +145,6 @@ fun startBot(mainActivity: MainActivity) {
         workingMode = 0, // ALPINE
         env = env
     )
-    // Initialize emulator immediately
     session.updateSize(80, 24, 0, 0)
     changeSession(mainActivity, sessionId)
 }
