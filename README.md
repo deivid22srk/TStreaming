@@ -14,7 +14,7 @@
 Este projeto foi construído sobre o trabalho incrível de desenvolvedores open-source. Gostaríamos de expressar nossa gratidão aos seguintes projetos:
 
 - **[ReTerminal](https://github.com/RohitKushvaha01/ReTerminal):** O emulador de terminal robusto e moderno que serve como base para este aplicativo.
-- **[FileStreamBot](https://github.com/TheCaduceus/FileStreamBot):** O bot de streaming de arquivos Python original que este aplicativo automatiza e gerencia.
+- **[FileStreamBot-fork](https://github.com/deivid22srk/FileStreamBot-fork):** O bot de streaming de arquivos Python (fork) que este aplicativo automatiza e gerencia.
 
 ## 📸 Screenshots
 <div>

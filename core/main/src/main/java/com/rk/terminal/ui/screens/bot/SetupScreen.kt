@@ -92,7 +92,7 @@ fun SetupScreen(
                     }
                 },
                 "Clonando FileStreamBot" to {
-                    runInAlpine(mainActivity, "git clone https://github.com/TheCaduceus/FileStreamBot.git /root/FileStreamBot") { line ->
+                    runInAlpine(mainActivity, "git clone https://github.com/deivid22srk/FileStreamBot-fork.git /root/FileStreamBot") { line ->
                         progressText = "git: $line"
                         logs.add(line)
                     }
