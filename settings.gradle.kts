@@ -33,7 +33,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ReTerminal"
+rootProject.name = "File Streaming Bot"
 include(":app")
 include(":core:main")
 
