@@ -32,20 +32,26 @@ fun BotScreen(
     LaunchedEffect(Unit) {
         while(true) {
             val session = mainActivity.sessionBinder?.getSession("FileStreamBot")
-            if (session != null) {
+            if (session != null && session.emulator != null) {
                 val transcript = session.emulator.screen.getSelectedText(0, 0, session.emulator.mColumns, session.emulator.mRows)
                 if (transcript.contains("Session started")) {
+                    isStarting = false
                     isRunning = true
                     statusText = "O servidor foi iniciado"
                 } else if (transcript.contains("Error") || transcript.contains("Exception") || transcript.contains("Traceback")) {
-                    isRunning = true // It "ran" but failed
-                    statusText = "O servidor iniciou com erros"
+                    // Specific requirement: "se teve algum erro... e pq funcionou"
+                    // We'll mark it as started but notify about the potential issues
+                    isStarting = false
+                    isRunning = true
+                    statusText = "O servidor iniciou (verifique os logs)"
                 }
             } else {
                 isRunning = false
-                if (!isStarting) statusText = "Servidor desligado"
+                if (!isStarting) {
+                    statusText = "Servidor desligado"
+                }
             }
-            delay(2000)
+            delay(1000)
         }
     }
 
@@ -78,10 +84,6 @@ fun BotScreen(
                         statusText = "O servidor está sendo iniciado..."
                         scope.launch {
                             startBot(mainActivity)
-                            delay(2000) // Simulação de tempo de boot
-                            isStarting = false
-                            isRunning = true
-                            statusText = "O servidor foi iniciado"
                         }
                     }
                 },
@@ -112,6 +114,16 @@ fun BotScreen(
 fun startBot(mainActivity: MainActivity) {
     val sessionId = "FileStreamBot"
 
+    val localDir = File(mainActivity.filesDir.parentFile, "local")
+    val botDir = File(localDir, "alpine/root/FileStreamBot")
+    if (!botDir.exists()) {
+        toast("Erro: Diretório do Bot não encontrado. Reinstale o sistema.")
+        return
+    }
+
+    // Clear existing session if it failed to start properly
+    mainActivity.sessionBinder?.terminateSession(sessionId)
+
     val env = mutableMapOf<String, String>()
     env["START_BOT"] = "1"
     env["TELEGRAM_API_ID"] = Settings.bot_api_id
@@ -128,12 +140,14 @@ fun startBot(mainActivity: MainActivity) {
 
     val terminalViewInstance = terminalView.get() ?: TerminalView(mainActivity, null)
     val client = TerminalBackEnd(terminalViewInstance, mainActivity)
-    mainActivity.sessionBinder!!.createSession(
+    val session = mainActivity.sessionBinder!!.createSession(
         sessionId,
         client,
         mainActivity,
         workingMode = 0, // ALPINE
         env = env
     )
+    // Initialize emulator immediately
+    session.updateSize(80, 24, 0, 0)
     changeSession(mainActivity, sessionId)
 }
