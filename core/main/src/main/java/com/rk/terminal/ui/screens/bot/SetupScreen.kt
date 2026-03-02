@@ -68,6 +68,15 @@ fun SetupScreen(
                 "Configurando ambiente" to {
                     logs.add("Configurando binários e scripts de inicialização...")
                     setupBasicEnv(mainActivity)
+                    // Fix DNS
+                    try {
+                        val resolvConf = alpineDir().child("etc").child("resolv.conf")
+                        resolvConf.parentFile?.mkdirs()
+                        resolvConf.writeText("nameserver 8.8.8.8\nnameserver 1.1.1.1\n")
+                        logs.add("DNS configurado.")
+                    } catch (e: Exception) {
+                        logs.add("Aviso: Falha ao configurar DNS: ${e.message}")
+                    }
                 },
                 "Atualizando repositórios" to {
                     runInAlpine(mainActivity, "apk update") { line ->
@@ -134,7 +143,7 @@ fun SetupScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Surface(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth().height(250.dp),
             color = Color.Black,
             shape = MaterialTheme.shapes.medium
         ) {
