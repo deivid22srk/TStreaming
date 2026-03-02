@@ -1,16 +1,15 @@
 package com.rk.terminal.ui.screens.bot
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.rk.components.compose.preferences.base.PreferenceGroup
 import com.rk.components.compose.preferences.base.PreferenceLayout
-import com.rk.components.compose.preferences.entry.PreferenceEntry
+import com.rk.components.compose.preferences.normal.Preference
 import com.rk.settings.Settings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -18,9 +17,9 @@ import com.rk.settings.Settings
 fun BotSettings(navController: NavController) {
     PreferenceLayout(
         label = "Bot Settings",
-        backArrowClick = { navController.popBackStack() }
+        backArrowVisible = true
     ) {
-        PreferenceGroup(label = "Telegram Configuration") {
+        PreferenceGroup(heading = "Telegram Configuration") {
             BotSettingEntry(title = "API ID", value = Settings.bot_api_id) { Settings.bot_api_id = it }
             BotSettingEntry(title = "API Hash", value = Settings.bot_api_hash) { Settings.bot_api_hash = it }
             BotSettingEntry(title = "Owner ID", value = Settings.bot_owner_id) { Settings.bot_owner_id = it }
@@ -29,7 +28,7 @@ fun BotSettings(navController: NavController) {
             BotSettingEntry(title = "Bot Token", value = Settings.bot_token) { Settings.bot_token = it }
             BotSettingEntry(title = "Channel ID", value = Settings.bot_channel_id) { Settings.bot_channel_id = it }
         }
-        PreferenceGroup(label = "Server Configuration") {
+        PreferenceGroup(heading = "Server Configuration") {
             BotSettingEntry(title = "Secret Code Length", value = Settings.bot_secret_length) { Settings.bot_secret_length = it }
             BotSettingEntry(title = "Base URL", value = Settings.bot_base_url) { Settings.bot_base_url = it }
             BotSettingEntry(title = "Bind Address", value = Settings.bot_bind_addr) { Settings.bot_bind_addr = it }
@@ -43,9 +42,9 @@ fun BotSettingEntry(title: String, value: String, onValueChange: (String) -> Uni
     var showDialog by remember { mutableStateOf(false) }
     var tempValue by remember { mutableStateOf(value) }
 
-    PreferenceEntry(
-        title = title,
-        description = value,
+    Preference(
+        text = { Text(title) },
+        secondaryText = { Text(value) },
         onClick = { showDialog = true }
     )
 

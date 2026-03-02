@@ -33,7 +33,7 @@ fun SetupScreen(
             val abi = Build.SUPPORTED_ABIS.firstOrNull { it in abiMap } ?: throw RuntimeException("CPU não suportada")
             val urls = abiMap[abi]!!
 
-            val steps = listOf(
+            val steps = listOf<Pair<String, suspend () -> Unit>>(
                 "Baixando componentes básicos" to {
                     downloadFile(urls.talloc, Rootfs.reTerminal.child("libtalloc.so.2"))
                     downloadFile(urls.proot, Rootfs.reTerminal.child("proot"))
@@ -57,16 +57,18 @@ fun SetupScreen(
                     runInAlpine(mainActivity, "git clone https://github.com/TheCaduceus/FileStreamBot.git /root/FileStreamBot") { line -> progressText = "git: $line" }
                 },
                 "Instalando dependências do Bot" to {
-                    runInAlpine(mainActivity, "cd /root/FileStreamBot && pip3 install -r requirements.txt") { line -> progressText = "pip: $line" }
+                    runInAlpine(mainActivity, "cd /root/FileStreamBot && export PIP_BREAK_SYSTEM_PACKAGES=1 && pip3 install -r requirements.txt") { line -> progressText = "pip: $line" }
                 }
             )
 
-            steps.forEachIndexed { index, (label, action) ->
+            for (index in steps.indices) {
+                val (label, action) = steps[index]
+                progressText = label
                 val baseProgress = index.toFloat() / steps.size
                 val nextProgress = (index + 1).toFloat() / steps.size
 
-                // We use a simplified sub-progress for long actions
-                withContext(Dispatchers.IO) { action() }
+                progress = baseProgress
+                action()
                 progress = nextProgress
             }
 
