@@ -24,6 +24,11 @@ import com.rk.terminal.ui.screens.downloader.Downloader
 import com.rk.terminal.ui.screens.settings.Settings
 import com.rk.terminal.ui.screens.terminal.Rootfs
 import com.rk.terminal.ui.screens.terminal.TerminalScreen
+import com.rk.terminal.ui.screens.auth.LoginScreen
+import com.rk.terminal.ui.screens.groups.GroupSelectionScreen
+import com.rk.terminal.ui.screens.media.MediaListScreen
+import com.rk.terminal.ui.screens.media.CreateMediaScreen
+import com.rk.terminal.ui.screens.media.VideoPickerScreen
 
 var showStatusBar = mutableStateOf(Settings.statusBar)
 var horizontal_statusBar = mutableStateOf(Settings.horizontal_statusBar)
@@ -68,7 +73,7 @@ fun UpdateStatusBar(mainActivityActivity: MainActivity,show: Boolean = true){
 fun MainActivityNavHost(modifier: Modifier = Modifier,navController: NavHostController,mainActivity: MainActivity) {
     NavHost(
         navController = navController,
-        startDestination = MainActivityRoutes.MainScreen.route,
+        startDestination = MainActivityRoutes.Login.route,
         enterTransition = { NavigationAnimationTransitions.enterTransition },
         exitTransition = { NavigationAnimationTransitions.exitTransition },
         popEnterTransition = { NavigationAnimationTransitions.popEnterTransition },
@@ -96,6 +101,21 @@ fun MainActivityNavHost(modifier: Modifier = Modifier,navController: NavHostCont
         composable(MainActivityRoutes.Customization.route){
             UpdateStatusBar(mainActivity,show = true)
             Customization()
+        }
+        composable(MainActivityRoutes.Login.route) {
+            LoginScreen(navController = navController)
+        }
+        composable(MainActivityRoutes.GroupSelection.route) {
+            GroupSelectionScreen(navController = navController)
+        }
+        composable(MainActivityRoutes.MediaList.route) {
+            MediaListScreen(navController = navController)
+        }
+        composable(MainActivityRoutes.CreateMedia.route) {
+            CreateMediaScreen(navController = navController)
+        }
+        composable(MainActivityRoutes.VideoPicker.route) {
+            VideoPickerScreen(navController = navController)
         }
     }
 }
