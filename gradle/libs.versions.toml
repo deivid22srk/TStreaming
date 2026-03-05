@@ -38,6 +38,7 @@ composeBom = "2025.11.01"
 coilCompose = "2.7.0"
 navigationCompose = "2.9.6"
 ktfmt = "0.25.0"
+tdlib = "1.8.56"
 
 tsBinding = "4.3.1"
 lsp4j = "0.24.0"
@@ -97,6 +98,7 @@ material3 = { group = "androidx.compose.material3", name = "material3" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 material-motion-compose-core = { group = "io.github.fornewid", name = "material-motion-compose-core", version = "2.0.1" }
 compose-dnd = { module = "com.mohamedrejeb.dnd:compose-dnd", version.ref = "composeDnd" }
+tdlib = { module = "com.github.tdlibx:td", version.ref = "tdlib" }
 
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidxAnnotation" }
 androidx-collection = { module = "androidx.collection:collection", version = "1.5.0" }
